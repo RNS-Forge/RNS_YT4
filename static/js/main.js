@@ -33,9 +33,27 @@ function initNavigation() {
     if (navToggle && navMenu) {
         navToggle.addEventListener('click', function (e) {
             e.stopPropagation();
+            const isActive = navMenu.classList.contains('active');
+
             navMenu.classList.toggle('active');
             navToggle.classList.toggle('active');
             body.classList.toggle('mobile-menu-open');
+
+            // Lock body scroll when menu is open
+            if (!isActive) {
+                // Store current scroll position
+                const scrollY = window.scrollY;
+                body.style.position = 'fixed';
+                body.style.top = `-${scrollY}px`;
+                body.style.width = '100%';
+            } else {
+                // Restore scroll position
+                const scrollY = body.style.top;
+                body.style.position = '';
+                body.style.top = '';
+                body.style.width = '';
+                window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            }
         });
 
         // Close mobile menu when clicking overlay
@@ -43,34 +61,64 @@ function initNavigation() {
             if (body.classList.contains('mobile-menu-open') &&
                 !navMenu.contains(e.target) &&
                 !navToggle.contains(e.target)) {
-                navMenu.classList.remove('active');
-                navToggle.classList.remove('active');
-                body.classList.remove('mobile-menu-open');
+                closeMobileMenu();
             }
         });
+    }
+
+    // Helper function to close mobile menu
+    function closeMobileMenu() {
+        if (navMenu) {
+            navMenu.classList.remove('active');
+        }
+        if (navToggle) {
+            navToggle.classList.remove('active');
+        }
+        body.classList.remove('mobile-menu-open');
+
+        // Restore scroll
+        const scrollY = body.style.top;
+        body.style.position = '';
+        body.style.top = '';
+        body.style.width = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
     }
 
     // Close mobile menu on link click
     document.querySelectorAll('.nav-menu a').forEach(function (link) {
         link.addEventListener('click', function () {
-            if (navMenu) {
-                navMenu.classList.remove('active');
+            if (navMenu && navMenu.classList.contains('active')) {
+                closeMobileMenu();
             }
-            if (navToggle) {
-                navToggle.classList.remove('active');
-            }
-            body.classList.remove('mobile-menu-open');
         });
     });
 
     // Close mobile menu on escape key
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && navMenu && navMenu.classList.contains('active')) {
-            navMenu.classList.remove('active');
-            navToggle.classList.remove('active');
-            body.classList.remove('mobile-menu-open');
+            closeMobileMenu();
         }
     });
+
+    // Helper function to close mobile menu
+    function closeMobileMenu() {
+        if (navMenu) {
+            navMenu.classList.remove('active');
+        }
+        if (navToggle) {
+            navToggle.classList.remove('active');
+        }
+        body.classList.remove('mobile-menu-open');
+
+        // Restore scroll
+        const scrollY = body.style.top;
+        body.style.position = '';
+        body.style.top = '';
+        body.style.width = '';
+        if (scrollY) {
+            window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        }
+    }
 }
 
 /* Scroll Effects */

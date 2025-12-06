@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initParallax();
     initHeroAnimations();
     initTestimonials();
+    initBrowserRotator();
 });
 
 /* Parallax Scrolling */
@@ -33,6 +34,49 @@ function initParallax() {
             });
         }
     });
+}
+
+/* Browser Screenshot Rotator */
+function initBrowserRotator() {
+    const images = [
+        'https://tse4.mm.bing.net/th/id/OIP.rmAy3MvqXaQHDvtSDOIjugAAAA?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3',
+        'https://tse4.mm.bing.net/th/id/OIP.Sj50XUZ8aFnFoYXjnNLzhAHaHa?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3',
+        'https://tse4.mm.bing.net/th/id/OIP.j_tB6epZWlqeAFTARLB7dwHaHa?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3',
+        'https://tse3.mm.bing.net/th/id/OIP.DiJViHndwNPeHV7n6K4IFgHaHa?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3',
+        'https://static.vecteezy.com/system/resources/previews/053/779/341/large_2x/youtube-red-iconic-logo-in-high-resolution-free-png.png',
+        'https://vectorseek.com/wp-content/uploads/2023/06/Youtube-Blue-icon-Vector.jpg',
+        'https://tse3.mm.bing.net/th/id/OIP.SU-XZu_Bn65-ITJWAm5MVgHaHa?cb=ucfimg2&ucfimg=1&w=512&h=512&rs=1&pid=ImgDetMain&o=7&rm=3',
+        'https://worthstartup.com/wp-content/uploads/2023/06/YouTube-Channel-Names.jpg',
+        'https://img.freepik.com/premium-photo/youtube-application-3d-social-media-icons-logo-3d-rendering_41204-20290.jpg',
+        'https://images.herzindagi.info/her-zindagi-english/images/2025/03/07/template/image/cvnbxhfgj-1741336107165.png',
+        'https://tse3.mm.bing.net/th/id/OIP.Qi1RONXpWJWfZBWokkYtigHaFz?cb=ucfimg2&ucfimg=1&w=670&h=525&rs=1&pid=ImgDetMain&o=7&rm=3',
+        'https://web3universe.today/wp-content/uploads/2024/03/l-6-1024x512.png',
+        'https://tse3.mm.bing.net/th/id/OIP.v9bBH0svkt-cIB3BK2v83AHaHa?cb=ucfimg2&ucfimg=1&w=600&h=600&rs=1&pid=ImgDetMain&o=7&rm=3'
+    ];
+
+    const el = document.querySelector('.browser-screenshot');
+    if (!el) return;
+
+    // Start with a random index to avoid same initial image on refresh
+    let idx = Math.floor(Math.random() * images.length);
+    el.src = images[idx];
+
+    setInterval(function () {
+        // fade out
+        el.classList.add('fade-out');
+        setTimeout(function () {
+            // choose a different random image
+            let next = Math.floor(Math.random() * images.length);
+            // ensure a different image is picked
+            if (next === idx) {
+                next = (next + 1) % images.length;
+            }
+            idx = next;
+            el.src = images[idx];
+            // fade in
+            el.classList.remove('fade-out');
+        }, 420);
+    }, 3000);
 }
 
 /* Hero Animations */

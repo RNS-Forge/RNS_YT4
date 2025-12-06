@@ -77,32 +77,61 @@ function initDownloadForm() {
 
 /* Folder Browser */
 function initFolderBrowser() {
-    var browseBtn = document.querySelector('.browse-folder-btn');
-    var locationDisplay = document.querySelector('.location-path');
-
-    if (!browseBtn) return;
-
-    browseBtn.addEventListener('click', function () {
-        fetch('/browse-folder', {
-            method: 'POST'
-        })
-            .then(function (response) {
-                return response.json();
+    // Auto download browse button
+    var browseBtn = document.getElementById('browseBtn');
+    var pathText = document.getElementById('pathText');
+    
+    if (browseBtn) {
+        browseBtn.addEventListener('click', function () {
+            fetch('/browse-folder', {
+                method: 'POST'
             })
-            .then(function (data) {
-                if (data.path) {
-                    if (locationDisplay) {
-                        locationDisplay.textContent = data.path;
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (data.path) {
+                        if (pathText) {
+                            pathText.textContent = data.path;
+                        }
+                        window.selectedDownloadPath = data.path;
+                        showToast('Download location set', 'success');
                     }
-                    window.selectedDownloadPath = data.path;
-                    showToast('Download location set', 'success');
-                }
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
+                    showToast('Failed to open folder browser', 'error');
+                });
+        });
+    }
+    
+    // Manual download browse button
+    var manualBrowseBtn = document.getElementById('manualBrowseBtn');
+    var manualPathText = document.getElementById('manualPathText');
+    
+    if (manualBrowseBtn) {
+        manualBrowseBtn.addEventListener('click', function () {
+            fetch('/browse-folder', {
+                method: 'POST'
             })
-            .catch(function (error) {
-                console.error('Error:', error);
-                showToast('Failed to open folder browser', 'error');
-            });
-    });
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (data.path) {
+                        if (manualPathText) {
+                            manualPathText.textContent = data.path;
+                        }
+                        window.selectedDownloadPath = data.path;
+                        showToast('Download location set', 'success');
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
+                    showToast('Failed to open folder browser', 'error');
+                });
+        });
+    }
 }
 
 /* Extract Playlist */
@@ -169,7 +198,7 @@ function displayVideos(videos) {
         item.setAttribute('data-video-id', video.id || index);
 
         item.innerHTML = '\
-            <img src="' + (video.thumbnail || '/static/images/placeholder.png') + '" alt="" class="video-thumbnail">\
+            <img src="' + (video.thumbnail || 'https://tse3.mm.bing.net/th/id/OIP.v9bBH0svkt-cIB3BK2v83AHaHa?cb=ucfimg2&ucfimg=1&w=600&h=600&rs=1&pid=ImgDetMain&o=7&rm=3') + '" alt="" class="video-thumbnail">\
             <div class="video-info">\
                 <div class="video-title">' + escapeHtml(video.title || 'Video ' + (index + 1)) + '</div>\
                 <div class="video-meta">\
@@ -252,7 +281,7 @@ function displayVideosInProgress(videos) {
         item.setAttribute('data-video-id', video.id || index);
 
         item.innerHTML = '\
-            <img src="' + (video.thumbnail || '/static/images/placeholder.png') + '" alt="" class="video-thumbnail">\
+            <img src="' + (video.thumbnail || 'https://tse3.mm.bing.net/th/id/OIP.v9bBH0svkt-cIB3BK2v83AHaHa?cb=ucfimg2&ucfimg=1&w=600&h=600&rs=1&pid=ImgDetMain&o=7&rm=3') + '" alt="" class="video-thumbnail">\
             <div class="video-info">\
                 <div class="video-title">' + escapeHtml(video.title || 'Video ' + (index + 1)) + '</div>\
             </div>\

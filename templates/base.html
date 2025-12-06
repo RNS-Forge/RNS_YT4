@@ -81,9 +81,22 @@
                 <li><a href="{{ url_for('features') }}" class="nav-link {% if request.endpoint == 'features' %}active{% endif %}">Features</a></li>
                 <li><a href="{{ url_for('download_page') }}" class="nav-link {% if request.endpoint == 'download_page' %}active{% endif %}">Download</a></li>
                 <li><a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint == 'about' %}active{% endif %}">About</a></li>
+                
+                <!-- Mobile Only Auth Buttons -->
+                <li class="nav-actions-mobile">
+                    {% if session.get('user') %}
+                    <div class="user-menu">
+                        <span class="user-name">{{ session.user.username }}</span>
+                        <a href="{{ url_for('logout') }}" class="btn btn-ghost">Logout</a>
+                    </div>
+                    {% else %}
+                    <button class="btn btn-ghost" onclick="openAuthPanel('login')">Login</button>
+                    <button class="btn btn-primary" onclick="openAuthPanel('signup')">Get Started</button>
+                    {% endif %}
+                </li>
             </ul>
             
-            <div class="nav-actions">
+            <div class="nav-actions nav-actions-desktop">
                 {% if session.get('user') %}
                 <div class="user-menu">
                     <span class="user-name">{{ session.user.username }}</span>

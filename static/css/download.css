@@ -91,9 +91,7 @@
     background: linear-gradient(135deg, var(--gray-100), var(--primary-400), var(--purple-400));
     background-clip: text;
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     animation: slideDown 0.8s ease-out 0.2s both;
-    text-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
 }
 
 .hero-container p {
@@ -115,10 +113,9 @@
 .hero-stat {
     text-align: center;
     padding: var(--space-4);
-    background: linear-gradient(135deg, rgba(17, 24, 39, 0.8), rgba(30, 41, 59, 0.6));
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(30, 41, 59, 0.85));
     border: 1px solid var(--gray-800);
     border-radius: var(--radius-lg);
-    backdrop-filter: blur(10px);
     min-width: 120px;
 }
 
@@ -133,7 +130,6 @@
 
 .hero-stat:hover .stat-number {
     transform: scale(1.1);
-    text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
 }
 
 .hero-stat .stat-label {
@@ -261,7 +257,6 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: slideDown 0.8s ease-out;
-    text-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
 }
 
 .download-header p {
@@ -675,7 +670,6 @@
     font-size: 1rem;
     transition: all var(--transition-normal);
     position: relative;
-    backdrop-filter: blur(10px);
 }
 
 .download-form input:focus {
@@ -761,11 +755,10 @@
     align-items: center;
     gap: var(--space-3);
     padding: var(--space-4);
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4));
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
     border: 2px solid var(--gray-800);
     border-radius: var(--radius-lg);
     transition: all var(--transition-normal);
-    backdrop-filter: blur(10px);
 }
 
 .quality-label i {
@@ -834,7 +827,6 @@
     line-height: 1.6;
     resize: vertical;
     transition: all var(--transition-normal);
-    backdrop-filter: blur(10px);
 }
 
 .download-form textarea:focus {
@@ -857,9 +849,8 @@
     font-size: 0.8125rem;
     color: var(--gray-500);
     padding: var(--space-1) var(--space-2);
-    background: rgba(30, 41, 59, 0.8);
+    background: rgba(30, 41, 59, 0.95);
     border-radius: var(--radius-sm);
-    backdrop-filter: blur(10px);
     border: 1px solid var(--gray-700);
 }
 
@@ -883,7 +874,6 @@
     font-size: 0.9375rem;
     transition: all var(--transition-normal);
     cursor: pointer;
-    backdrop-filter: blur(10px);
 }
 
 .input-with-btn .location-display:hover {
