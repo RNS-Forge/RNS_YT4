@@ -80,7 +80,7 @@ function initFolderBrowser() {
     // Auto download browse button
     var browseBtn = document.getElementById('browseBtn');
     var pathText = document.getElementById('pathText');
-    
+
     if (browseBtn) {
         browseBtn.addEventListener('click', function () {
             fetch('/browse-folder', {
@@ -104,11 +104,11 @@ function initFolderBrowser() {
                 });
         });
     }
-    
+
     // Manual download browse button
     var manualBrowseBtn = document.getElementById('manualBrowseBtn');
     var manualPathText = document.getElementById('manualPathText');
-    
+
     if (manualBrowseBtn) {
         manualBrowseBtn.addEventListener('click', function () {
             fetch('/browse-folder', {
