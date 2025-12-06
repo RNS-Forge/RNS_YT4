@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section with Parallax -->
+<section class="hero" id="hero">
+    <div class="parallax-bg">
+        <div class="parallax-layer layer-1" data-depth="0.1">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+        </div>
+        <div class="parallax-layer layer-2" data-depth="0.2">
+            <div class="shape shape-3"></div>
+            <div class="shape shape-4"></div>
+        </div>
+        <div class="parallax-layer layer-3" data-depth="0.3">
+            <div class="floating-card card-1">
+                <img src="https://i.ibb.co/4RpMBJvN/images-3.jpg" alt="YouTube" class="card-img">
+            </div>
+            <div class="floating-card card-2">
+                <img src="https://i.ibb.co/XrpQPCNj/download-3.jpg" alt="Download" class="card-img">
+            </div>
+        </div>
+        <div class="grid-overlay"></div>
+    </div>
+    
+    <div class="hero-container">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                <span>Professional Grade Tool</span>
+            </div>
+            
+            <h1 class="hero-title">
+                <span class="title-line">Download YouTube</span>
+                <span class="title-line">Playlists with</span>
+                <span class="title-line gradient">RNS YT4</span>
+            </h1>
+            
+            <p class="hero-description">
+                Enterprise-level playlist extraction and video downloading solution. 
+                Built for performance, designed for professionals.
+            </p>
+            
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-value" data-count="10000">0</span>
+                    <span class="stat-label">Downloads</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value" data-count="5000">0</span>
+                    <span class="stat-label">Users</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value" data-count="99">0</span>
+                    <span class="stat-label">Success Rate</span>
+                </div>
+            </div>
+            
+            <div class="hero-actions">
+                <a href="{{ url_for('download_page') }}" class="btn btn-large btn-primary">
+                    <span>Start Downloading</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+                <a href="{{ url_for('features') }}" class="btn btn-large btn-outline">
+                    <span>View Features</span>
+                </a>
+            </div>
+            
+            <div class="hero-note">
+                <i class="fas fa-info-circle"></i>
+                <span>Free: 1 playlist/day</span>
+                <span class="separator">|</span>
+                <span>Premium: 20 playlists/day</span>
+            </div>
+        </div>
+        
+        <div class="hero-visual">
+            <div class="visual-container">
+                <div class="visual-glow"></div>
+                <div class="browser-frame">
+                    <div class="browser-bar">
+                        <div class="browser-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="browser-address">rns-yt4.local</div>
+                    </div>
+                    <div class="browser-body">
+                        <img src="https://i.ibb.co/39Q9q3HV/download.jpg" alt="RNS YT4 Interface" class="browser-screenshot">
+                    </div>
+                </div>
+                <div class="floating-element el-1">
+                    <img src="https://i.ibb.co/BV9mPxrW/images-1.jpg" alt="Feature" class="float-img">
+                </div>
+                <div class="floating-element el-2">
+                    <img src="https://i.ibb.co/4gxGxB7g/images-2.jpg" alt="Feature" class="float-img">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="scroll-indicator">
+        <span>Scroll to explore</span>
+        <div class="scroll-arrow">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </div>
+</section>
+
+<!-- Features Preview -->
+<section class="features-preview" id="featuresPreview">
+    <div class="section-container">
+        <div class="section-header">
+            <span class="section-tag">Capabilities</span>
+            <h2 class="section-title">Built for Performance</h2>
+            <p class="section-subtitle">Professional tools designed for efficient video downloading</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card" data-aos="fade-up">
+                <div class="feature-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3>High Speed Engine</h3>
+                <p>Optimized download pipeline for maximum throughput and minimal latency</p>
+            </div>
+            
+            <div class="feature-card" data-aos="fade-up" data-delay="100">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Secure Processing</h3>
+                <p>All operations run locally with enterprise-grade security protocols</p>
+            </div>
+            
+            <div class="feature-card" data-aos="fade-up" data-delay="200">
+                <div class="feature-icon">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <h3>Auto Extraction</h3>
+                <p>Intelligent playlist parsing with automatic video link detection</p>
+            </div>
+            
+            <div class="feature-card" data-aos="fade-up" data-delay="300">
+                <div class="feature-icon">
+                    <i class="fas fa-terminal"></i>
+                </div>
+                <h3>Background Mode</h3>
+                <p>Silent operation mode for uninterrupted workflow</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-it-works">
+    <div class="section-container">
+        <div class="section-header">
+            <span class="section-tag">Process</span>
+            <h2 class="section-title">How It Works</h2>
+        </div>
+        
+        <div class="steps-container">
+            <div class="step-card">
+                <div class="step-number">01</div>
+                <div class="step-content">
+                    <h3>Paste URL</h3>
+                    <p>Enter your YouTube playlist URL into the input field</p>
+                </div>
+            </div>
+            
+            <div class="step-connector">
+                <svg viewBox="0 0 100 20">
+                    <path d="M0,10 L90,10" stroke="currentColor" stroke-width="2" stroke-dasharray="5,5"/>
+                    <path d="M85,5 L95,10 L85,15" fill="none" stroke="currentColor" stroke-width="2"/>
+                </svg>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">02</div>
+                <div class="step-content">
+                    <h3>Select Location</h3>
+                    <p>Choose your preferred download directory</p>
+                </div>
+            </div>
+            
+            <div class="step-connector">
+                <svg viewBox="0 0 100 20">
+                    <path d="M0,10 L90,10" stroke="currentColor" stroke-width="2" stroke-dasharray="5,5"/>
+                    <path d="M85,5 L95,10 L85,15" fill="none" stroke="currentColor" stroke-width="2"/>
+                </svg>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">03</div>
+                <div class="step-content">
+                    <h3>Download</h3>
+                    <p>Click download and let the system handle the rest</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="cta-container">
+        <div class="cta-bg">
+            <img src="https://i.ibb.co/xKn2byjj/images.jpg" alt="Background" class="cta-bg-img">
+            <div class="cta-overlay"></div>
+        </div>
+        <div class="cta-content">
+            <h2>Ready to Start?</h2>
+            <p>Create an account to unlock premium features and higher limits</p>
+            <div class="cta-actions">
+                {% if session.get('user') %}
+                <a href="{{ url_for('download_page') }}" class="btn btn-large btn-white">Go to Downloads</a>
+                {% else %}
+                <button onclick="openAuthPanel('signup')" class="btn btn-large btn-white">Create Account</button>
+                <a href="{{ url_for('download_page') }}" class="btn btn-large btn-ghost-white">Try Free</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+{% block title %}Download Videos - RNS YT4{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/download.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Modern Hero Section -->
+<section class="download-hero">
+    <div class="hero-bg">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+    <div class="hero-container">
+        <span class="section-tag">Download</span>
+        <h1>Download Center</h1>
+        <p>Transform your favorite playlists into offline collections with our advanced download engine</p>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="stat-number">1M+</span>
+                <span class="stat-label">Downloads</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="hero-stat">
+                <span class="stat-number">99.9%</span>
+                <span class="stat-label">Success Rate</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="hero-stat">
+                <span class="stat-number">4K</span>
+                <span class="stat-label">Quality</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Animated Background -->
+<div class="animated-background">
+    <div class="bg-animation">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+        <div class="floating-shape shape-4"></div>
+        <div class="floating-shape shape-5"></div>
+    </div>
+</div>
+
+<section class="download-section">
+    <div class="download-container">
+        <!-- Enhanced Header with Animation -->
+        <div class="download-header">
+            <div class="header-icon">
+                <i class="fas fa-cloud-download-alt"></i>
+            </div>
+            <h1>Download Center</h1>
+            <p>Transform your favorite playlists into offline collections with our advanced download engine</p>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <span class="stat-number">1M+</span>
+                    <span class="stat-label">Downloads</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-number">99.9%</span>
+                    <span class="stat-label">Success Rate</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-number">4K</span>
+                    <span class="stat-label">Quality</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Usage Stats with Enhanced Animation -->
+        <div class="usage-stats">
+            <div class="usage-header">
+                <div class="usage-info">
+                    <div class="usage-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="usage-text">
+                        <h3>Daily Usage Tracker</h3>
+                        <p class="usage-count">
+                            <span id="usedCount">{{ session.get('usage', 0) }}</span> of 
+                            <span id="limitCount">{% if session.get('user') %}20{% else %}1{% endif %}</span> downloads used
+                        </p>
+                    </div>
+                </div>
+                {% if not session.get('user') %}
+                <button onclick="openAuthPanel('signup')" class="upgrade-link">
+                    <i class="fas fa-crown"></i>
+                    <span>Upgrade Plan</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                {% endif %}
+            </div>
+            <div class="usage-bar-container">
+                <div class="usage-bar" id="usageBar" style="width: {{ (session.get('usage', 0) / (20 if session.get('user') else 1)) * 100 }}%"></div>
+            </div>
+        </div>
+        
+        <!-- Enhanced Download Tabs -->
+        <div class="download-tabs">
+            <button class="tab-btn active" data-tab="auto">
+                <div class="tab-icon">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <div class="tab-content">
+                    <span class="tab-title">Smart Playlist</span>
+                    <span class="tab-desc">Automatic extraction</span>
+                </div>
+                <div class="tab-indicator"></div>
+            </button>
+            <button class="tab-btn" data-tab="manual">
+                <div class="tab-icon">
+                    <i class="fas fa-list-ul"></i>
+                </div>
+                <div class="tab-content">
+                    <span class="tab-title">Manual Selection</span>
+                    <span class="tab-desc">Custom video list</span>
+                </div>
+                <div class="tab-indicator"></div>
+            </button>
+        </div>
+        
+        <!-- Smart Playlist Tab Content -->
+        <div class="tab-content active" id="autoTab">
+            <div class="download-card">
+                <div class="card-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h2>AI-Powered Playlist Extraction</h2>
+                <p>Our intelligent system automatically detects and extracts all videos from your playlist with optimal quality settings.</p>
+                
+                <form id="autoForm" class="download-form">
+                    <div class="form-group">
+                        <label for="playlistUrl">
+                            <i class="fas fa-link"></i>
+                            Playlist URL
+                        </label>
+                        <div class="input-container">
+                            <input type="url" 
+                                   id="playlistUrl" 
+                                   placeholder="https://www.youtube.com/playlist?list=..." 
+                                   required>
+                            <div class="input-animation"></div>
+                        </div>
+                        <span class="form-help">
+                            <i class="fas fa-info-circle"></i>
+                            Supports YouTube, Vimeo, and SoundCloud playlists
+                        </span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="downloadPath">
+                            <i class="fas fa-folder-open"></i>
+                            Download Location
+                        </label>
+                        <div class="input-with-btn">
+                            <div class="location-display" id="locationDisplay">
+                                <i class="fas fa-folder"></i>
+                                <span id="pathText">{{ session.get('download_path', 'downloads') }}</span>
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="browseBtn">
+                                <i class="fas fa-search"></i>
+                                Browse
+                            </button>
+                        </div>
+                        <span class="form-help">
+                            <i class="fas fa-lightbulb"></i>
+                            Choose where your videos will be saved
+                        </span>
+                    </div>
+                    
+                    <div class="quality-selector">
+                        <label>
+                            <i class="fas fa-cog"></i>
+                            Quality Settings
+                        </label>
+                        <div class="quality-options">
+                            <label class="quality-option">
+                                <input type="radio" name="quality" value="best" checked>
+                                <span class="quality-label">
+                                    <i class="fas fa-crown"></i>
+                                    <span>Best Quality</span>
+                                    <small>Up to 4K</small>
+                                </span>
+                            </label>
+                            <label class="quality-option">
+                                <input type="radio" name="quality" value="high">
+                                <span class="quality-label">
+                                    <i class="fas fa-medal"></i>
+                                    <span>High Quality</span>
+                                    <small>1080p</small>
+                                </span>
+                            </label>
+                            <label class="quality-option">
+                                <input type="radio" name="quality" value="medium">
+                                <span class="quality-label">
+                                    <i class="fas fa-balance-scale"></i>
+                                    <span>Balanced</span>
+                                    <small>720p</small>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large" id="autoDownloadBtn">
+                            <i class="fas fa-rocket"></i>
+                            <span>Start Smart Download</span>
+                            <div class="btn-glow"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Manual Selection Tab Content -->
+        <div class="tab-content" id="manualTab">
+            <div class="download-card">
+                <div class="card-icon">
+                    <i class="fas fa-hand-point-right"></i>
+                </div>
+                <h2>Custom Video Selection</h2>
+                <p>Manually specify individual video URLs for precise control over your downloads.</p>
+                
+                <form id="manualForm" class="download-form">
+                    <div class="form-group">
+                        <label for="manualUrls">
+                            <i class="fas fa-list"></i>
+                            Video URLs
+                        </label>
+                        <div class="textarea-container">
+                            <textarea id="manualUrls" 
+                                      placeholder="https://www.youtube.com/watch?v=example1&#10;https://www.youtube.com/watch?v=example2&#10;https://www.youtube.com/watch?v=example3"
+                                      rows="8"></textarea>
+                            <div class="textarea-overlay">
+                                <span class="url-counter">0 URLs detected</span>
+                            </div>
+                        </div>
+                        <span class="form-help">
+                            <i class="fas fa-info-circle"></i>
+                            Enter one URL per line. Supports YouTube, Vimeo, and more
+                        </span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="manualDownloadPath">
+                            <i class="fas fa-folder-open"></i>
+                            Download Location
+                        </label>
+                        <div class="input-with-btn">
+                            <div class="location-display" id="manualLocationDisplay">
+                                <i class="fas fa-folder"></i>
+                                <span id="manualPathText">{{ session.get('download_path', 'downloads') }}</span>
+                            </div>
+                            <button type="button" class="btn btn-secondary" id="manualBrowseBtn">
+                                <i class="fas fa-search"></i>
+                                Browse
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large" id="manualDownloadBtn">
+                            <i class="fas fa-download"></i>
+                            <span>Download Selected Videos</span>
+                            <div class="btn-glow"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Enhanced Progress Section -->
+        <div class="progress-section" id="progressSection">
+            <div class="progress-header">
+                <div class="progress-title">
+                    <div class="progress-icon">
+                        <i class="fas fa-cog fa-spin"></i>
+                    </div>
+                    <h3>Processing Your Request</h3>
+                </div>
+                <div class="progress-status downloading" id="progressStatus">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span>Initializing...</span>
+                </div>
+            </div>
+            
+            <div class="progress-message" id="progressMessage">
+                <i class="fas fa-info-circle"></i>
+                <span>Preparing download environment...</span>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="progress-info">
+                <span class="progress-percentage" id="progressPercentage">0%</span>
+                <span class="progress-detail" id="progressDetail">Starting...</span>
+            </div>
+            
+            <div class="video-preview" id="videoPreview">
+                <div class="preview-header">
+                    <h4><i class="fas fa-play-circle"></i> Detected Videos</h4>
+                    <span class="video-count" id="videoCount">0 videos</span>
+                </div>
+                <div class="video-list" id="videoList">
+                    <!-- Video items will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Enhanced Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h3><i class="fas fa-check-circle"></i> Download Complete</h3>
+                <span class="results-count" id="resultsCount">0 downloads completed</span>
+            </div>
+            
+            <div class="download-summary" id="downloadSummary">
+                <div class="summary-item">
+                    <div class="summary-icon success">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="summary-text">
+                        <span class="summary-number" id="successCount">0</span>
+                        <span class="summary-label">Successful</span>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-icon warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="summary-text">
+                        <span class="summary-number" id="warningCount">0</span>
+                        <span class="summary-label">Warnings</span>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-icon error">
+                        <i class="fas fa-times"></i>
+                    </div>
+                    <div class="summary-text">
+                        <span class="summary-number" id="errorCount">0</span>
+                        <span class="summary-label">Failed</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-actions">
+                <button class="btn btn-secondary" id="openFolderBtn">
+                    <i class="fas fa-folder-open"></i>
+                    Open Downloads Folder
+                </button>
+                <button class="btn btn-ghost" id="clearResultsBtn">
+                    <i class="fas fa-trash"></i>
+                    Clear Results
+                </button>
+                <button class="btn btn-primary" id="downloadMoreBtn">
+                    <i class="fas fa-plus"></i>
+                    Download More
+                </button>
+            </div>
+            
+            <div class="video-results" id="videoResults">
+                <!-- Result items will be dynamically added here -->
+            </div>
+        </div>
+        
+        <!-- Quick Stats Dashboard -->
+        <div class="download-stats">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <span class="stat-value" id="totalDownloads">0</span>
+                <span class="stat-label">Total Downloads</span>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <span class="stat-value" id="avgTime">0s</span>
+                <span class="stat-label">Avg. Time</span>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-hdd"></i>
+                </div>
+                <span class="stat-value" id="totalSize">0 MB</span>
+                <span class="stat-label">Total Size</span>
+            </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-state-icon">
+                <i class="fas fa-cloud-download-alt"></i>
+            </div>
+            <h4>Ready to Download</h4>
+            <p>Choose your download method above and start building your offline collection</p>
+        </div>
+    </div>
+</section>
+
+<!-- Floating Action Button for Quick Access -->
+<div class="floating-action">
+    <button class="fab" id="quickDownloadFab" title="Quick Download">
+        <i class="fas fa-bolt"></i>
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/download.js') }}"></script>
+<script>
+// Enhanced animations and interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate stats on load
+    animateStats();
+    
+    // Tab switching with animations
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            
+            // Remove active states
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active states
+            btn.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        });
+    });
+    
+    // URL counter for manual mode
+    const manualUrls = document.getElementById('manualUrls');
+    const urlCounter = document.querySelector('.url-counter');
+    
+    if (manualUrls && urlCounter) {
+        manualUrls.addEventListener('input', function() {
+            const urls = this.value.split('\n').filter(url => url.trim());
+            urlCounter.textContent = urls.length + ' URLs detected';
+        });
+    }
+    
+    // Floating shapes animation
+    animateFloatingShapes();
+});
+
+function animateStats() {
+    const statValues = document.querySelectorAll('.stat-value');
+    statValues.forEach((stat, index) => {
+        setTimeout(() => {
+            stat.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                stat.style.transform = 'scale(1)';
+            }, 200);
+        }, index * 100);
+    });
+}
+
+function animateFloatingShapes() {
+    const shapes = document.querySelectorAll('.floating-shape');
+    shapes.forEach((shape, index) => {
+        const delay = index * 2000;
+        const duration = 8000 + (index * 1000);
+        
+        shape.style.animationDelay = delay + 'ms';
+        shape.style.animationDuration = duration + 'ms';
+    });
+}
+</script>
+{% endblock %}

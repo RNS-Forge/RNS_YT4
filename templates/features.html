@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Features{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/features.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="features-hero">
+    <div class="hero-bg">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+    </div>
+    <div class="hero-container">
+        <span class="section-tag">Features</span>
+        <h1>Powerful Capabilities</h1>
+        <p>Professional-grade tools for efficient video downloading</p>
+    </div>
+</section>
+
+<section class="features-main">
+    <div class="features-container">
+        <div class="feature-block">
+            <div class="feature-visual">
+                <img src="https://i.ibb.co/4RpMBJvN/images-3.jpg" alt="Speed" class="feature-image">
+            </div>
+            <div class="feature-content">
+                <div class="feature-badge">Performance</div>
+                <h2>Lightning Fast Downloads</h2>
+                <p>Our optimized download engine utilizes parallel processing and intelligent chunking to maximize throughput. Download entire playlists in minutes, not hours.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> Multi-threaded download engine</li>
+                    <li><i class="fas fa-check"></i> Automatic retry on failures</li>
+                    <li><i class="fas fa-check"></i> Bandwidth optimization</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="feature-block reverse">
+            <div class="feature-visual">
+                <img src="https://i.ibb.co/BV9mPxrW/images-1.jpg" alt="Security" class="feature-image">
+            </div>
+            <div class="feature-content">
+                <div class="feature-badge">Security</div>
+                <h2>Enterprise-Grade Protection</h2>
+                <p>All operations run locally on your machine. No data is sent to external servers. Your downloads remain private and secure.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> Local processing only</li>
+                    <li><i class="fas fa-check"></i> No data collection</li>
+                    <li><i class="fas fa-check"></i> Secure file handling</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="feature-block">
+            <div class="feature-visual">
+                <img src="https://i.ibb.co/4gxGxB7g/images-2.jpg" alt="Automation" class="feature-image">
+            </div>
+            <div class="feature-content">
+                <div class="feature-badge">Automation</div>
+                <h2>Smart Extraction</h2>
+                <p>Intelligent playlist parsing automatically detects and extracts all video links. Support for public and unlisted playlists.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> Automatic link detection</li>
+                    <li><i class="fas fa-check"></i> Batch processing support</li>
+                    <li><i class="fas fa-check"></i> Background operation mode</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features-grid-section">
+    <div class="section-container">
+        <div class="section-header">
+            <span class="section-tag">More</span>
+            <h2>Additional Features</h2>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="card-icon"><i class="fas fa-folder-open"></i></div>
+                <h3>Custom Save Location</h3>
+                <p>Choose exactly where your files are saved with the native folder picker</p>
+            </div>
+            <div class="feature-card">
+                <div class="card-icon"><i class="fas fa-history"></i></div>
+                <h3>Download History</h3>
+                <p>Track all your previous downloads with timestamps and status</p>
+            </div>
+            <div class="feature-card">
+                <div class="card-icon"><i class="fas fa-cog"></i></div>
+                <h3>Headless Mode</h3>
+                <p>Background processing without browser windows interrupting your work</p>
+            </div>
+            <div class="feature-card">
+                <div class="card-icon"><i class="fas fa-sync"></i></div>
+                <h3>Auto Retry</h3>
+                <p>Automatic retry mechanism for failed downloads with exponential backoff</p>
+            </div>
+            <div class="feature-card">
+                <div class="card-icon"><i class="fas fa-tachometer-alt"></i></div>
+                <h3>Progress Tracking</h3>
+                <p>Real-time progress updates with detailed status information</p>
+            </div>
+            <div class="feature-card">
+                <div class="card-icon"><i class="fas fa-file-video"></i></div>
+                <h3>Format Support</h3>
+                <p>Download in the best available quality and format</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="comparison-section">
+    <div class="section-container">
+        <div class="section-header">
+            <span class="section-tag">Plans</span>
+            <h2>Free vs Premium</h2>
+        </div>
+        
+        <div class="comparison-table">
+            <div class="plan-column">
+                <div class="plan-header">
+                    <h3>Free</h3>
+                    <span class="plan-price">$0</span>
+                </div>
+                <ul class="plan-features">
+                    <li><i class="fas fa-check"></i> 1 playlist per day</li>
+                    <li><i class="fas fa-check"></i> Manual mode</li>
+                    <li><i class="fas fa-check"></i> Standard speed</li>
+                    <li class="disabled"><i class="fas fa-times"></i> Priority processing</li>
+                    <li class="disabled"><i class="fas fa-times"></i> Download history</li>
+                </ul>
+                <a href="{{ url_for('download_page') }}" class="btn btn-outline btn-full">Use Free</a>
+            </div>
+            
+            <div class="plan-column featured">
+                <div class="plan-badge">Recommended</div>
+                <div class="plan-header">
+                    <h3>Premium</h3>
+                    <span class="plan-price">Free with Account</span>
+                </div>
+                <ul class="plan-features">
+                    <li><i class="fas fa-check"></i> 20 playlists per day</li>
+                    <li><i class="fas fa-check"></i> Auto and Manual modes</li>
+                    <li><i class="fas fa-check"></i> Maximum speed</li>
+                    <li><i class="fas fa-check"></i> Priority processing</li>
+                    <li><i class="fas fa-check"></i> Download history</li>
+                </ul>
+                {% if session.get('user') %}
+                <a href="{{ url_for('download_page') }}" class="btn btn-primary btn-full">Go to Downloads</a>
+                {% else %}
+                <button onclick="openAuthPanel('signup')" class="btn btn-primary btn-full">Create Account</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
