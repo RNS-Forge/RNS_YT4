@@ -5,6 +5,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
 import requests
 import os
 import time
@@ -210,6 +212,11 @@ def about():
     """About page"""
     return render_template('about.html')
 
+@app.route('/.well-known/appspecific/com.chrome.devtools.json')
+def chrome_devtools_config():
+    """Handle Chrome DevTools config request"""
+    return jsonify({}), 200
+
 # ==========================================
 # API ROUTES - Authentication
 # ==========================================
@@ -324,36 +331,16 @@ def browse_folder():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-def get_headless_chrome_options():
-    """Get Chrome options configured for completely hidden background operation"""
+def get_chrome_options():
+    """Get Chrome options configured for visible operation"""
     chrome_options = webdriver.ChromeOptions()
     
-    # Run completely in background - no visible window
-    chrome_options.add_argument('--headless=new')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    
-    # Prevent any popups or notifications
-    chrome_options.add_argument('--disable-notifications')
-    chrome_options.add_argument('--disable-popup-blocking')
-    chrome_options.add_argument('--disable-infobars')
-    chrome_options.add_argument('--disable-extensions')
-    
-    # Silent mode - suppress all output
-    chrome_options.add_argument('--log-level=3')
-    chrome_options.add_argument('--silent')
-    chrome_options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
-    chrome_options.add_experimental_option('useAutomationExtension', False)
-    
-    # Window and rendering
-    chrome_options.add_argument('--window-size=1920,1080')
-    chrome_options.add_argument('--window-position=-2400,-2400')  # Position off-screen
-    
-    # SSL and security
+    # Visible window settings
     chrome_options.add_argument('--ignore-certificate-errors')
     chrome_options.add_argument('--ignore-ssl-errors')
     chrome_options.add_argument('--disable-web-security')
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
     
     # User agent
     chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
@@ -380,7 +367,7 @@ def extract_playlist():
     
     driver = None
     try:
-        chrome_options = get_headless_chrome_options()
+        chrome_options = get_chrome_options()
         
         service = Service(ChromeDriverManager().install())
         service.log_path = os.devnull  # Suppress service logs
@@ -504,116 +491,162 @@ def start_download():
     return jsonify({'success': True, 'task_id': task_id})
 
 def process_downloads(task_id, videos, download_path):
-    """Process downloads completely in background - no visible browser"""
+    """Process downloads with visible browser"""
     os.makedirs(download_path, exist_ok=True)
     
-    chrome_options = get_headless_chrome_options()
+    for i, video in enumerate(videos):
+        video_id = video.get('id', f'video-{i}')
+        video_url = video.get('url', '')
+        video_title = video.get('title', f'Video {i + 1}')
+        
+        print(f"Starting download for: {video_title} ({video_url})")
+        
+        download_tasks[task_id]['current_video'] = video_id
+        download_tasks[task_id]['current_video_title'] = video_title
+        download_tasks[task_id]['status'] = 'downloading'
+        download_tasks[task_id]['message'] = f'Processing {video_title}...'
+        
+        driver = None
+        try:
+            print("Initializing Chrome driver...")
+            chrome_options = get_chrome_options()
+            
+            # Set download preferences
+            prefs = {
+                "download.default_directory": os.path.abspath(download_path),
+                "download.prompt_for_download": False,
+                "download.directory_upgrade": True,
+                "safebrowsing.enabled": True
+            }
+            chrome_options.add_experimental_option("prefs", prefs)
+            
+            service = Service(ChromeDriverManager().install())
+            # service.log_path = os.devnull  # Suppress service logs
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            
+            # Navigate to downloader site
+            print("Navigating to downloader site...")
+            driver.get("https://turboscribe.ai/downloader/youtube/mp4")
+            time.sleep(3)
+            
+            print("Submitting URL...")
+            input_field = WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.NAME, "url"))
+            )
+            input_field.clear()
+            input_field.send_keys(video_url)
+            
+            download_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']"))
+            )
+            download_button.click()
+            time.sleep(5)
+            
+            print("Waiting for download link...")
+            download_link = WebDriverWait(driver, 90).until(
+                EC.presence_of_element_located((By.XPATH, 
+                    "//a[contains(@class, 'dui-btn') and contains(., 'Download')] | " +
+                    "//a[contains(@href, 'googlevideo.com')]"
+                ))
+            )
+            
+            video_download_url = download_link.get_attribute("href")
+            print(f"Found download URL: {video_download_url[:50]}...")
+            
+            # Store current window handle
+            main_window = driver.current_window_handle
+            
+            # Open link in new tab using JavaScript (Redirect to Chrome behavior)
+            print("Opening in new tab...")
+            driver.execute_script("window.open(arguments[0], '_blank');", video_download_url)
+            time.sleep(4)
+            
+            # Switch to new tab if opened
+            if len(driver.window_handles) > 1:
+                driver.switch_to.window(driver.window_handles[-1])
+                time.sleep(3)
+                
+                # Try to get video source from the new tab
+                try:
+                    video_element = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.TAG_NAME, "video"))
+                    )
+                    video_src = video_element.get_attribute("src")
+                    if video_src and 'googlevideo.com' in video_src:
+                        video_download_url = video_src
+                    
+                    # Trigger download using JavaScript
+                    print("Triggering browser download...")
+                    driver.execute_script("""
+                        var link = document.createElement('a');
+                        link.href = arguments[0];
+                        link.download = arguments[1];
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    """, video_download_url, f"web_{video_id}.mp4")
+                    
+                    time.sleep(2)
+                    
+                except Exception as e:
+                    print(f"Video element error: {e}")
+                
+                # Close the new tab and switch back
+                driver.close()
+                driver.switch_to.window(main_window)
+            
+            session_req = requests.Session()
+            session_req.verify = certifi.where()
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': '*/*',
+                'Referer': 'https://www.youtube.com/'
+            }
+            
+            download_tasks[task_id]['message'] = f'Downloading {video_title}...'
+            print("Starting server-side download...")
+            
+            response = session_req.get(video_download_url, stream=True, timeout=300, headers=headers)
+            response.raise_for_status()
+            
+            filename = f"{video_id}.mp4"
+            filepath = os.path.join(download_path, filename)
+            
+            # Get file size for progress tracking
+            total_size = int(response.headers.get('content-length', 0))
+            downloaded = 0
+            
+            with open(filepath, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size > 0:
+                            file_progress = int((downloaded / total_size) * 100)
+                            download_tasks[task_id]['file_progress'] = file_progress
+            
+            print(f"Download completed: {filename}")
+            download_tasks[task_id]['completed_videos'].append(video_id)
+            download_tasks[task_id]['message'] = f'Completed {video_title}'
+            
+        except Exception as e:
+            print(f"Error downloading {video_title}: {str(e)}")
+            download_tasks[task_id]['failed_videos'].append(video_id)
+            download_tasks[task_id]['message'] = f'Failed to download {video_title}'
+        finally:
+            if driver:
+                driver.quit()
+        
+        completed = len(download_tasks[task_id]['completed_videos'])
+        failed = len(download_tasks[task_id]['failed_videos'])
+        download_tasks[task_id]['progress'] = int(((completed + failed) / len(videos)) * 100)
+        download_tasks[task_id]['file_progress'] = 0
     
-    # Set download preferences
-    prefs = {
-        "download.default_directory": os.path.abspath(download_path),
-        "download.prompt_for_download": False,
-        "download.directory_upgrade": True,
-        "safebrowsing.enabled": False
-    }
-    chrome_options.add_experimental_option("prefs", prefs)
-    
-    driver = None
-    try:
-        service = Service(ChromeDriverManager().install())
-        service.log_path = os.devnull  # Suppress service logs
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        
-        for i, video in enumerate(videos):
-            video_id = video.get('id', f'video-{i}')
-            video_url = video.get('url', '')
-            video_title = video.get('title', f'Video {i + 1}')
-            
-            download_tasks[task_id]['current_video'] = video_id
-            download_tasks[task_id]['current_video_title'] = video_title
-            download_tasks[task_id]['status'] = 'downloading'
-            download_tasks[task_id]['message'] = f'Processing {video_title}...'
-            
-            try:
-                # Navigate to downloader site (runs silently in background)
-                driver.get("https://turboscribe.ai/downloader/youtube/mp4")
-                time.sleep(2)
-                
-                input_field = WebDriverWait(driver, 15).until(
-                    EC.presence_of_element_located((By.NAME, "url"))
-                )
-                input_field.clear()
-                input_field.send_keys(video_url)
-                
-                download_button = WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']"))
-                )
-                download_button.click()
-                time.sleep(5)
-                
-                download_link = WebDriverWait(driver, 90).until(
-                    EC.presence_of_element_located((By.XPATH, 
-                        "//a[contains(@class, 'dui-btn') and contains(., 'Download')] | " +
-                        "//a[contains(@href, 'googlevideo.com')]"
-                    ))
-                )
-                
-                video_download_url = download_link.get_attribute("href")
-                
-                session_req = requests.Session()
-                session_req.verify = certifi.where()
-                
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Accept': '*/*',
-                    'Referer': 'https://www.youtube.com/'
-                }
-                
-                download_tasks[task_id]['message'] = f'Downloading {video_title}...'
-                
-                response = session_req.get(video_download_url, stream=True, timeout=300, headers=headers)
-                response.raise_for_status()
-                
-                filename = f"{video_id}.mp4"
-                filepath = os.path.join(download_path, filename)
-                
-                # Get file size for progress tracking
-                total_size = int(response.headers.get('content-length', 0))
-                downloaded = 0
-                
-                with open(filepath, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-                            downloaded += len(chunk)
-                            if total_size > 0:
-                                file_progress = int((downloaded / total_size) * 100)
-                                download_tasks[task_id]['file_progress'] = file_progress
-                
-                download_tasks[task_id]['completed_videos'].append(video_id)
-                download_tasks[task_id]['message'] = f'Completed {video_title}'
-                
-            except Exception as e:
-                download_tasks[task_id]['failed_videos'].append(video_id)
-                download_tasks[task_id]['message'] = f'Failed to download {video_title}'
-            
-            completed = len(download_tasks[task_id]['completed_videos'])
-            failed = len(download_tasks[task_id]['failed_videos'])
-            download_tasks[task_id]['progress'] = int(((completed + failed) / len(videos)) * 100)
-            download_tasks[task_id]['file_progress'] = 0
-        
-        download_tasks[task_id]['status'] = 'completed'
-        download_tasks[task_id]['progress'] = 100
-        download_tasks[task_id]['current_video'] = None
-        download_tasks[task_id]['message'] = 'All downloads completed'
-        
-    except Exception as e:
-        download_tasks[task_id]['status'] = 'error'
-        download_tasks[task_id]['error'] = str(e)
-        download_tasks[task_id]['message'] = 'Download failed'
-    finally:
-        if driver:
-            driver.quit()
+    download_tasks[task_id]['status'] = 'completed'
+    download_tasks[task_id]['progress'] = 100
+    download_tasks[task_id]['current_video'] = None
+    download_tasks[task_id]['message'] = 'All downloads completed'
 
 @app.route('/download-progress/<task_id>')
 def download_progress(task_id):
@@ -633,4 +666,4 @@ if __name__ == '__main__':
     print("  RNS YT4 - YouTube Playlist Downloader")
     print("  Open http://127.0.0.1:5000 in your browser")
     print("=" * 50)
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)

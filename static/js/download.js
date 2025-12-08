@@ -39,40 +39,31 @@ function initTabs() {
 
 /* Auto Download Form */
 function initDownloadForm() {
-    var form = document.getElementById('auto-download-form');
+    var form = document.getElementById('autoForm');
     if (!form) return;
 
-    var playlistInput = form.querySelector('input[name="playlist_url"]');
-    var extractBtn = form.querySelector('.extract-btn');
-    var downloadBtn = form.querySelector('.download-btn');
-    var progressSection = document.querySelector('.progress-section');
-    var resultsSection = document.querySelector('.results-section');
+    var playlistInput = document.getElementById('playlistUrl');
+    var submitBtn = document.getElementById('autoDownloadBtn');
 
-    // Extract playlist
-    if (extractBtn) {
-        extractBtn.addEventListener('click', function () {
-            var url = playlistInput.value.trim();
+    // Handle form submission
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
 
-            if (!url) {
-                showToast('Please enter a playlist URL', 'error');
-                return;
-            }
+        var url = playlistInput.value.trim();
 
-            if (!isValidYouTubeUrl(url)) {
-                showToast('Please enter a valid YouTube playlist URL', 'error');
-                return;
-            }
+        if (!url) {
+            showToast('Please enter a playlist URL', 'error');
+            return;
+        }
 
-            extractPlaylist(url);
-        });
-    }
+        if (!isValidYouTubeUrl(url)) {
+            showToast('Please enter a valid YouTube playlist URL', 'error');
+            return;
+        }
 
-    // Start download
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', function () {
-            startDownload();
-        });
-    }
+        // Extract playlist first
+        extractPlaylistAndDownload(url);
+    });
 }
 
 /* Folder Browser */
@@ -132,6 +123,55 @@ function initFolderBrowser() {
                 });
         });
     }
+}
+
+/* Extract Playlist and Start Download */
+function extractPlaylistAndDownload(url) {
+    var submitBtn = document.getElementById('autoDownloadBtn');
+
+    // Show loading
+    setButtonLoading(submitBtn, true);
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Extracting videos...</span>';
+
+    fetch('/extract-playlist', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url: url })
+    })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (data) {
+            if (data.error) {
+                setButtonLoading(submitBtn, false);
+                submitBtn.innerHTML = '<i class="fas fa-rocket"></i> <span>Start Smart Download</span>';
+                showToast(data.error, 'error');
+                return;
+            }
+
+            if (data.videos && data.videos.length > 0) {
+                window.playlistVideos = data.videos;
+                showToast('Found ' + data.videos.length + ' videos. Starting download...', 'success');
+
+                // Automatically start download
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Starting downloads...</span>';
+                setTimeout(function () {
+                    startDownload();
+                }, 1000);
+            } else {
+                setButtonLoading(submitBtn, false);
+                submitBtn.innerHTML = '<i class="fas fa-rocket"></i> <span>Start Smart Download</span>';
+                showToast('No videos found in playlist', 'error');
+            }
+        })
+        .catch(function (error) {
+            setButtonLoading(submitBtn, false);
+            submitBtn.innerHTML = '<i class="fas fa-rocket"></i> <span>Start Smart Download</span>';
+            console.error('Error:', error);
+            showToast('Failed to extract playlist', 'error');
+        });
 }
 
 /* Extract Playlist */
@@ -222,13 +262,18 @@ function startDownload() {
         return;
     }
 
-    var downloadBtn = document.querySelector('.download-btn') || document.getElementById('autoDownloadBtn');
+    var downloadBtn = document.getElementById('autoDownloadBtn');
+    if (!downloadBtn) {
+        downloadBtn = document.querySelector('.download-btn');
+    }
+
     var progressPanel = document.getElementById('progressPanel');
     var videoList = document.getElementById('videoList');
 
     // Show progress panel
     if (progressPanel) {
         progressPanel.style.display = 'block';
+        progressPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // Display video list in progress panel
@@ -236,7 +281,10 @@ function startDownload() {
         displayVideosInProgress(window.playlistVideos);
     }
 
-    setButtonLoading(downloadBtn, true);
+    if (downloadBtn) {
+        setButtonLoading(downloadBtn, true);
+        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Processing...</span>';
+    }
 
     var downloadPath = window.selectedDownloadPath || 'downloads';
 
@@ -255,14 +303,21 @@ function startDownload() {
         })
         .then(function (data) {
             if (data.task_id) {
+                showToast('Download started!', 'success');
                 pollDownloadProgress(data.task_id);
             } else if (data.error) {
-                setButtonLoading(downloadBtn, false);
+                if (downloadBtn) {
+                    setButtonLoading(downloadBtn, false);
+                    downloadBtn.innerHTML = '<i class="fas fa-rocket"></i> <span>Start Smart Download</span>';
+                }
                 showToast(data.error, 'error');
             }
         })
         .catch(function (error) {
-            setButtonLoading(downloadBtn, false);
+            if (downloadBtn) {
+                setButtonLoading(downloadBtn, false);
+                downloadBtn.innerHTML = '<i class="fas fa-rocket"></i> <span>Start Smart Download</span>';
+            }
             console.error('Error:', error);
             showToast('Failed to start download', 'error');
         });
@@ -391,14 +446,21 @@ function updateVideoStatus(videoId, status) {
 
 /* Download Complete */
 function onDownloadComplete(data) {
-    var downloadBtn = document.querySelector('.download-btn') || document.getElementById('autoDownloadBtn');
+    var downloadBtn = document.getElementById('autoDownloadBtn');
+    if (!downloadBtn) {
+        downloadBtn = document.querySelector('.download-btn');
+    }
+
     var progressBar = document.querySelector('.progress-bar');
     var progressStatus = document.querySelector('.progress-status');
     var progressTitle = document.querySelector('.progress-title');
     var progressMessage = document.querySelector('.progress-message');
     var resultsPanel = document.getElementById('resultsPanel');
 
-    setButtonLoading(downloadBtn, false);
+    if (downloadBtn) {
+        setButtonLoading(downloadBtn, false);
+        downloadBtn.innerHTML = '<i class="fas fa-rocket"></i> <span>Start Smart Download</span>';
+    }
 
     if (progressBar) {
         progressBar.classList.remove('active');
@@ -455,9 +517,16 @@ function showResultsSummary(data) {
 }
 
 /* Download Error */
-function onDownloadError(error) {
-    var downloadBtn = document.querySelector('.download-btn');
-    setButtonLoading(downloadBtn, false);
+function onDownloadError(errorMsg) {
+    var downloadBtn = document.getElementById('autoDownloadBtn');
+    if (!downloadBtn) {
+        downloadBtn = document.querySelector('.download-btn');
+    }
+
+    if (downloadBtn) {
+        setButtonLoading(downloadBtn, false);
+        downloadBtn.innerHTML = '<i class="fas fa-rocket"></i> <span>Start Smart Download</span>';
+    }
     showToast(error || 'Download failed', 'error');
 }
 
