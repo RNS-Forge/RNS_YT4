@@ -1,16 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory, session, render_template, redirect, url_for, flash
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.keys import Keys
 import requests
 import os
 import time
-import ssl
 import certifi
 import csv
 import hashlib
@@ -18,19 +9,15 @@ import uuid
 import re
 import logging
 
-# Suppress selenium and webdriver logs - keep backend silent
-logging.getLogger('selenium').setLevel(logging.CRITICAL)
+# Suppress logs
 logging.getLogger('urllib3').setLevel(logging.CRITICAL)
-logging.getLogger('WDM').setLevel(logging.CRITICAL)
-os.environ['WDM_LOG'] = '0'
-os.environ['WDM_LOG_LEVEL'] = '0'
 
 # Fix SSL certificate issue
 os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
-app.secret_key = 'rns-yt4-secret-key-2024-professional'
+app.secret_key = os.environ.get('SECRET_KEY', 'rns-yt4-secret-key-2024-professional')
 
 # Ensure store directory exists
 STORE_DIR = os.path.join(os.path.dirname(__file__), 'store')
@@ -308,48 +295,14 @@ def api_signup():
 
 @app.route('/browse-folder', methods=['POST'])
 def browse_folder():
-    """Open a native folder selection dialog"""
-    try:
-        import tkinter as tk
-        from tkinter import filedialog
-        
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes('-topmost', True)
-        
-        folder_path = filedialog.askdirectory(
-            title='Select Download Folder',
-            initialdir=os.path.expanduser('~')
-        )
-        
-        root.destroy()
-        
-        if folder_path:
-            return jsonify({'success': True, 'path': folder_path})
-        else:
-            return jsonify({'success': False, 'cancelled': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    """Return default download folder (client-side handling)"""
+    return jsonify({'success': True, 'path': 'downloads', 'message': 'Downloads will be saved to your browser\'s download folder'})
 
-def get_chrome_options():
-    """Get Chrome options configured for visible operation"""
-    chrome_options = webdriver.ChromeOptions()
-    
-    # Visible window settings
-    chrome_options.add_argument('--ignore-certificate-errors')
-    chrome_options.add_argument('--ignore-ssl-errors')
-    chrome_options.add_argument('--disable-web-security')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    
-    # User agent
-    chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-    
-    return chrome_options
+
 
 @app.route('/extract-playlist', methods=['POST'])
 def extract_playlist():
-    """Extract video links from playlist - runs completely in background"""
+    """Extract video links from playlist URL using YouTube API pattern"""
     data = request.get_json()
     url = data.get('url', '')
     
@@ -365,296 +318,63 @@ def extract_playlist():
             'require_login': True
         }), 403
     
-    driver = None
     try:
-        chrome_options = get_chrome_options()
+        # Extract playlist ID
+        playlist_id = None
+        if 'list=' in url:
+            playlist_id = url.split('list=')[1].split('&')[0]
         
-        service = Service(ChromeDriverManager().install())
-        service.log_path = os.devnull  # Suppress service logs
-        driver = webdriver.Chrome(service=service, options=chrome_options)
+        if not playlist_id:
+            return jsonify({'success': False, 'error': 'Invalid playlist URL'})
         
-        driver.get("https://nimtools.com/youtube-playlist-video-link-extractor")
-        time.sleep(3)
+        # For deployment: Return instructions for client-side extraction
+        # In production, you would use YouTube Data API v3 here with an API key
+        videos = []
         
-        input_field = WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='text']"))
-        )
-        input_field.clear()
-        input_field.send_keys(url)
-        
-        time.sleep(2)
-        
-        try:
-            recaptcha_frame = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "iframe[title='reCAPTCHA']"))
-            )
-            driver.switch_to.frame(recaptcha_frame)
-            checkbox = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.CLASS_NAME, "recaptcha-checkbox-border"))
-            )
-            checkbox.click()
-            driver.switch_to.default_content()
-            time.sleep(3)
-        except Exception as e:
-            driver.switch_to.default_content()
-        
-        submit_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "input[type='submit']"))
-        )
-        submit_button.click()
-        time.sleep(5)
-        
-        try:
-            WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located((By.ID, "copyButton"))
-            )
-            
-            video_links = []
-            link_elements = driver.find_elements(By.XPATH, "//a[contains(@href, 'youtube.com/watch')]")
-            for element in link_elements:
-                href = element.get_attribute('href')
-                if href and 'watch?v=' in href:
-                    video_links.append(href)
-            
-            if not video_links:
-                text_areas = driver.find_elements(By.TAG_NAME, "textarea")
-                for ta in text_areas:
-                    text_content = ta.get_attribute('value')
-                    if text_content:
-                        urls = re.findall(r'https://www\.youtube\.com/watch\?v=[^\s]+', text_content)
-                        video_links.extend(urls)
-            
-            video_links = list(set(video_links))
-            
-            if video_links:
-                videos = []
-                for i, link in enumerate(video_links):
-                    video_id = link.split('v=')[-1].split('&')[0] if 'v=' in link else f'video-{i}'
-                    videos.append({
-                        'id': video_id,
-                        'url': link,
-                        'title': f'Video {i + 1}',
-                        'thumbnail': f'https://img.youtube.com/vi/{video_id}/mqdefault.jpg'
-                    })
+        # Simulated response - in production, replace with actual API call
+        return jsonify({
+            'success': False,
+            'error': 'Server-side extraction not available on hosted version. Please use manual download with individual video URLs.',
+            'playlist_id': playlist_id,
+            'suggestion': 'Enter video URLs manually in the Manual Selection tab'
+        })
                 
-                if not is_logged_in:
-                    session['guest_downloads'] = guest_downloads + 1
-                
-                return jsonify({
-                    'success': True,
-                    'videos': videos,
-                    'count': len(videos)
-                })
-            else:
-                return jsonify({
-                    'success': False,
-                    'error': 'Could not extract video links. Please check if the playlist is public.'
-                })
-                
-        except Exception as e:
-            return jsonify({'success': False, 'error': f'Failed to extract links: {str(e)}'})
-            
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        if driver:
-            driver.quit()
 
 @app.route('/api/download', methods=['POST'])
 def start_download():
-    """Start downloading videos - all processing happens in background"""
+    """Generate download links for client-side downloading"""
     data = request.get_json()
     videos = data.get('videos', [])
-    download_path = data.get('path', 'downloads')
     
     if not videos:
         return jsonify({'success': False, 'error': 'No videos to download'})
     
-    task_id = str(uuid.uuid4())
+    # Prepare download information for client-side handling
+    download_info = []
+    for video in videos:
+        download_info.append({
+            'id': video.get('id'),
+            'url': video.get('url'),
+            'title': video.get('title'),
+            'thumbnail': video.get('thumbnail'),
+            'download_url': f"https://www.youtube.com/watch?v={video.get('id')}"
+        })
     
-    download_tasks[task_id] = {
-        'status': 'starting',
-        'progress': 0,
-        'current_video': None,
-        'current_video_title': None,
-        'completed_videos': [],
-        'failed_videos': [],
-        'total': len(videos),
-        'message': 'Initializing download...'
-    }
-    
-    import threading
-    thread = threading.Thread(target=process_downloads, args=(task_id, videos, download_path))
-    thread.daemon = True
-    thread.start()
-    
-    return jsonify({'success': True, 'task_id': task_id})
+    return jsonify({
+        'success': True,
+        'message': 'Please use a browser extension or third-party tool to download from YouTube URLs',
+        'videos': download_info,
+        'instruction': 'Right-click on video URLs and use your preferred download method'
+    })
 
-def process_downloads(task_id, videos, download_path):
-    """Process downloads with visible browser"""
-    os.makedirs(download_path, exist_ok=True)
-    
-    for i, video in enumerate(videos):
-        video_id = video.get('id', f'video-{i}')
-        video_url = video.get('url', '')
-        video_title = video.get('title', f'Video {i + 1}')
-        
-        print(f"Starting download for: {video_title} ({video_url})")
-        
-        download_tasks[task_id]['current_video'] = video_id
-        download_tasks[task_id]['current_video_title'] = video_title
-        download_tasks[task_id]['status'] = 'downloading'
-        download_tasks[task_id]['message'] = f'Processing {video_title}...'
-        
-        driver = None
-        try:
-            print("Initializing Chrome driver...")
-            chrome_options = get_chrome_options()
-            
-            # Set download preferences
-            prefs = {
-                "download.default_directory": os.path.abspath(download_path),
-                "download.prompt_for_download": False,
-                "download.directory_upgrade": True,
-                "safebrowsing.enabled": True
-            }
-            chrome_options.add_experimental_option("prefs", prefs)
-            
-            service = Service(ChromeDriverManager().install())
-            # service.log_path = os.devnull  # Suppress service logs
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-            
-            # Navigate to downloader site
-            print("Navigating to downloader site...")
-            driver.get("https://turboscribe.ai/downloader/youtube/mp4")
-            time.sleep(3)
-            
-            print("Submitting URL...")
-            input_field = WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located((By.NAME, "url"))
-            )
-            input_field.clear()
-            input_field.send_keys(video_url)
-            
-            download_button = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']"))
-            )
-            download_button.click()
-            time.sleep(5)
-            
-            print("Waiting for download link...")
-            download_link = WebDriverWait(driver, 90).until(
-                EC.presence_of_element_located((By.XPATH, 
-                    "//a[contains(@class, 'dui-btn') and contains(., 'Download')] | " +
-                    "//a[contains(@href, 'googlevideo.com')]"
-                ))
-            )
-            
-            video_download_url = download_link.get_attribute("href")
-            print(f"Found download URL: {video_download_url[:50]}...")
-            
-            # Store current window handle
-            main_window = driver.current_window_handle
-            
-            # Open link in new tab using JavaScript (Redirect to Chrome behavior)
-            print("Opening in new tab...")
-            driver.execute_script("window.open(arguments[0], '_blank');", video_download_url)
-            time.sleep(4)
-            
-            # Switch to new tab if opened
-            if len(driver.window_handles) > 1:
-                driver.switch_to.window(driver.window_handles[-1])
-                time.sleep(3)
-                
-                # Try to get video source from the new tab
-                try:
-                    video_element = WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.TAG_NAME, "video"))
-                    )
-                    video_src = video_element.get_attribute("src")
-                    if video_src and 'googlevideo.com' in video_src:
-                        video_download_url = video_src
-                    
-                    # Trigger download using JavaScript
-                    print("Triggering browser download...")
-                    driver.execute_script("""
-                        var link = document.createElement('a');
-                        link.href = arguments[0];
-                        link.download = arguments[1];
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    """, video_download_url, f"web_{video_id}.mp4")
-                    
-                    time.sleep(2)
-                    
-                except Exception as e:
-                    print(f"Video element error: {e}")
-                
-                # Close the new tab and switch back
-                driver.close()
-                driver.switch_to.window(main_window)
-            
-            session_req = requests.Session()
-            session_req.verify = certifi.where()
-            
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': '*/*',
-                'Referer': 'https://www.youtube.com/'
-            }
-            
-            download_tasks[task_id]['message'] = f'Downloading {video_title}...'
-            print("Starting server-side download...")
-            
-            response = session_req.get(video_download_url, stream=True, timeout=300, headers=headers)
-            response.raise_for_status()
-            
-            filename = f"{video_id}.mp4"
-            filepath = os.path.join(download_path, filename)
-            
-            # Get file size for progress tracking
-            total_size = int(response.headers.get('content-length', 0))
-            downloaded = 0
-            
-            with open(filepath, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-                        downloaded += len(chunk)
-                        if total_size > 0:
-                            file_progress = int((downloaded / total_size) * 100)
-                            download_tasks[task_id]['file_progress'] = file_progress
-            
-            print(f"Download completed: {filename}")
-            download_tasks[task_id]['completed_videos'].append(video_id)
-            download_tasks[task_id]['message'] = f'Completed {video_title}'
-            
-        except Exception as e:
-            print(f"Error downloading {video_title}: {str(e)}")
-            download_tasks[task_id]['failed_videos'].append(video_id)
-            download_tasks[task_id]['message'] = f'Failed to download {video_title}'
-        finally:
-            if driver:
-                driver.quit()
-        
-        completed = len(download_tasks[task_id]['completed_videos'])
-        failed = len(download_tasks[task_id]['failed_videos'])
-        download_tasks[task_id]['progress'] = int(((completed + failed) / len(videos)) * 100)
-        download_tasks[task_id]['file_progress'] = 0
-    
-    download_tasks[task_id]['status'] = 'completed'
-    download_tasks[task_id]['progress'] = 100
-    download_tasks[task_id]['current_video'] = None
-    download_tasks[task_id]['message'] = 'All downloads completed'
+
 
 @app.route('/download-progress/<task_id>')
 def download_progress(task_id):
-    """Get download progress"""
-    if task_id not in download_tasks:
-        return jsonify({'error': 'Task not found'}), 404
-    
-    return jsonify(download_tasks[task_id])
+    """Get download progress - not applicable for client-side downloads"""
+    return jsonify({'error': 'Server-side downloads not available on hosted version'}), 404
 
 @app.route('/static/<path:path>')
 def static_files(path):
@@ -662,8 +382,13 @@ def static_files(path):
 
 if __name__ == '__main__':
     init_users_csv()
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('DEBUG', 'True').lower() == 'true'
+    
     print("=" * 50)
     print("  RNS YT4 - YouTube Playlist Downloader")
-    print("  Open http://127.0.0.1:5000 in your browser")
+    if debug:
+        print(f"  Open http://127.0.0.1:{port} in your browser")
     print("=" * 50)
-    app.run(debug=True, threaded=True)
+    
+    app.run(host='0.0.0.0', port=port, debug=debug, threaded=True)
