@@ -8,6 +8,7 @@ import hashlib
 import uuid
 import re
 import logging
+from datetime import datetime
 
 # Suppress logs
 logging.getLogger('urllib3').setLevel(logging.CRITICAL)
@@ -15,6 +16,9 @@ logging.getLogger('urllib3').setLevel(logging.CRITICAL)
 # Fix SSL certificate issue
 os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
 os.environ['SSL_CERT_FILE'] = certifi.where()
+
+# Launch date: January 1, 2026 at 1:00 AM
+LAUNCH_DATE = datetime(2026, 1, 1, 1, 0, 0)
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = os.environ.get('SECRET_KEY', 'rns-yt4-secret-key-2024-professional')
@@ -28,6 +32,52 @@ USERS_FILE = os.path.join(STORE_DIR, 'users.csv')
 
 # Store download tasks
 download_tasks = {}
+
+# ==========================================
+# MIDDLEWARE - COMING SOON CHECK
+# ==========================================
+
+@app.before_request
+def check_launch_date():
+    """Check if app should be accessible based on launch date"""
+    # Allow access to coming soon page and static files
+    allowed_paths = ['/coming-soon', '/static/', '/check-launch-status']
+    
+    if any(request.path.startswith(path) for path in allowed_paths):
+        return None
+    
+    # Check if launch date has passed
+    if datetime.now() < LAUNCH_DATE:
+        return redirect(url_for('coming_soon'))
+    
+    return None
+
+# ==========================================
+# COMING SOON ROUTES
+# ==========================================
+
+@app.route('/coming-soon')
+def coming_soon():
+    """Coming soon page displayed before launch"""
+    return render_template('coming_soon.html')
+
+@app.route('/check-launch-status')
+def check_launch_status():
+    """API endpoint to check if launch date has passed"""
+    now = datetime.now()
+    launched = now >= LAUNCH_DATE
+    
+    if launched:
+        time_diff = now - LAUNCH_DATE
+    else:
+        time_diff = LAUNCH_DATE - now
+    
+    return jsonify({
+        'launched': launched,
+        'launch_date': LAUNCH_DATE.strftime('%Y-%m-%d %H:%M:%S'),
+        'current_time': now.strftime('%Y-%m-%d %H:%M:%S'),
+        'time_remaining': str(time_diff) if not launched else '0'
+    })
 
 # ==========================================
 # CSV USER MANAGEMENT
